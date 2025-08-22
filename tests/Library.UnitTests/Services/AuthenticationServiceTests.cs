@@ -76,6 +76,7 @@ namespace Library.UnitTests.Services
             var user = new User
             {
                 Id = 1,
+                Name = "Test User",
                 Email = email,
                 PasswordHash = hashedPassword,
                 IsEnabled = true
@@ -103,6 +104,7 @@ namespace Library.UnitTests.Services
             var user = new User
             {
                 Id = 1,
+                Name = "Test User",
                 Email = email,
                 PasswordHash = hashedPassword,
                 IsEnabled = true
@@ -127,6 +129,7 @@ namespace Library.UnitTests.Services
             var user = new User
             {
                 Id = 1,
+                Name = "Test User",
                 Email = email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
                 IsEnabled = false
@@ -153,6 +156,8 @@ namespace Library.UnitTests.Services
             var user = new User
             {
                 Id = userId,
+                Name = "Test User",
+                Email = "test@example.com",
                 PasswordHash = hashedOldPassword
             };
 
@@ -187,6 +192,8 @@ namespace Library.UnitTests.Services
             var user = new User
             {
                 Id = userId,
+                Name = "Test User",
+                Email = "test@example.com",
                 PasswordHash = hashedRealPassword
             };
 
