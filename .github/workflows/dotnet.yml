@@ -45,19 +45,3 @@ jobs:
       uses: codecov/codecov-action@v3
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      uses: github/codeql-action/init@v3
-      with:
-        languages: csharp
-        queries: security-and-quality
-
-    - name: Restore dependencies
-      run: dotnet restore
-      
-    - name: Build with dotnet
-      run: |
-        dotnet build --configuration Release --no-restore
-        
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
-      with:
-        category: "/language:csharp"
