@@ -33,10 +33,15 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   security:
-  runs-on: ubuntu-latest
-  steps:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+    steps:
     - uses: actions/checkout@v3
-
+      with:
+        fetch-depth: 0
+    
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
@@ -46,12 +51,16 @@ jobs:
       uses: github/codeql-action/init@v3
       with:
         languages: csharp
+        queries: security-and-quality
 
     - name: Restore dependencies
       run: dotnet restore
-
-    - name: Build
-      run: dotnet build --no-restore
-
+      
+    - name: Build with dotnet
+      run: |
+        dotnet build --configuration Release --no-restore
+        
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:csharp"
