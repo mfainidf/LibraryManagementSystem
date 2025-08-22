@@ -14,7 +14,7 @@ namespace Library.Console
     {
         public static async Task Main(string[] args)
         {
-            await Logger.LogAsync("Application starting...");
+            var logger = new StructuredLogger();
             
             try
             {
@@ -24,7 +24,7 @@ namespace Library.Console
                 {
                     var dbContext = scope.ServiceProvider.GetRequiredService<LibraryDbContext>();
                     await dbContext.Database.EnsureCreatedAsync();
-                    await Logger.LogAsync("Database initialized");
+                    await logger.LogAsync("Database initialized");
 
                     var authMenu = scope.ServiceProvider.GetRequiredService<AuthenticationMenu>();
                     await authMenu.ShowMainMenuAsync();
@@ -32,11 +32,11 @@ namespace Library.Console
             }
             catch (Exception ex)
             {
-                await Logger.LogAsync($"Application error: {ex.Message}", LogType.Error);
+                await logger.LogErrorAsync(ex, "Application startup");
                 throw;
             }
             
-            await Logger.LogAsync("Application shutting down...");
+            await logger.LogAsync("Application shutting down...");
         }
 
         private static IServiceProvider ConfigureServices()
@@ -52,6 +52,9 @@ namespace Library.Console
 
             // Services
             services.AddScoped<IAuthenticationService, AuthenticationService>();
+
+            // Logging
+            services.AddSingleton<StructuredLogger>();
 
             // UI
             services.AddScoped<AuthenticationMenu>();
