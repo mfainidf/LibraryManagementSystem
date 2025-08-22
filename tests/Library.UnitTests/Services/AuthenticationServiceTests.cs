@@ -60,8 +60,8 @@ namespace Library.UnitTests.Services
                 .ReturnsAsync(true);
 
             // Act & Assert
-            await _authService.Invoking(x => x.RegisterUserAsync("Test", email, "password"))
-                .Should().ThrowAsync<InvalidOperationException>()
+            var action = async () => await _authService.RegisterUserAsync("Test", email, "password");
+            await action.Should().ThrowAsync<InvalidOperationException>()
                 .WithMessage("Email already exists");
         }
 
@@ -112,8 +112,8 @@ namespace Library.UnitTests.Services
                 .ReturnsAsync(user);
 
             // Act & Assert
-            await _authService.Invoking(x => x.LoginAsync(email, password))
-                .Should().ThrowAsync<InvalidOperationException>()
+            var action = async () => await _authService.LoginAsync(email, password);
+            await action.Should().ThrowAsync<InvalidOperationException>()
                 .WithMessage("Invalid credentials");
         }
 
@@ -136,8 +136,8 @@ namespace Library.UnitTests.Services
                 .ReturnsAsync(user);
 
             // Act & Assert
-            await _authService.Invoking(x => x.LoginAsync(email, password))
-                .Should().ThrowAsync<InvalidOperationException>()
+            var action = async () => await _authService.LoginAsync(email, password);
+            await action.Should().ThrowAsync<InvalidOperationException>()
                 .WithMessage("Invalid credentials or account disabled");
         }
 
@@ -159,13 +159,20 @@ namespace Library.UnitTests.Services
             _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
                 .ReturnsAsync(user);
 
+            User? capturedUser = null;
+            _userRepositoryMock.Setup(x => x.UpdateAsync(It.IsAny<User>()))
+                .Callback<User>(user => capturedUser = user);
+
             // Act
             var result = await _authService.ChangePasswordAsync(userId, oldPassword, newPassword);
 
             // Assert
             result.Should().BeTrue();
-            _userRepositoryMock.Verify(x => x.UpdateAsync(It.Is<User>(u => 
-                BCrypt.Net.BCrypt.Verify(newPassword, u.PasswordHash))), Times.Once);
+            _userRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<User>()), Times.Once);
+
+            // Verify the password was properly hashed
+            capturedUser.Should().NotBeNull();
+            BCrypt.Net.BCrypt.Verify(newPassword, capturedUser!.PasswordHash).Should().BeTrue();
         }
 
         [Fact]
@@ -187,8 +194,8 @@ namespace Library.UnitTests.Services
                 .ReturnsAsync(user);
 
             // Act & Assert
-            await _authService.Invoking(x => x.ChangePasswordAsync(userId, oldPassword, newPassword))
-                .Should().ThrowAsync<InvalidOperationException>()
+            var action = async () => await _authService.ChangePasswordAsync(userId, oldPassword, newPassword);
+            await action.Should().ThrowAsync<InvalidOperationException>()
                 .WithMessage("Invalid current password");
         }
     }
