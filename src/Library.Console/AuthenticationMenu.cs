@@ -2,15 +2,15 @@ using System;
 using System.Threading.Tasks;
 using Library.Core.Models;
 using Library.Core.Interfaces;
+using Library.Console.Logging;
 
 namespace Library.Console
 {
     public class AuthenticationMenu
     {
-        private readonly IAuthenticationService _authService;
-        private User _currentUser;
-
-        public AuthenticationMenu(IAuthenticationService authService)
+    private readonly IAuthenticationService _authService;
+    private readonly StructuredLogger _logger;
+    private User _currentUser;        public AuthenticationMenu(IAuthenticationService authService)
         {
             _authService = authService;
         }
