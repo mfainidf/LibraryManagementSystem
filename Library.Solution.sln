@@ -13,6 +13,26 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Library.Console", "src\Libr
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{B4F97281-0DBD-4835-9ED8-7DFB966E87FF}"
+	ProjectSection(SolutionItems) = preProject
+		docs\github_issues.md = docs\github_issues.md
+		docs\LibrarySystem_Specifications.md = docs\LibrarySystem_Specifications.md
+		docs\README.md = docs\README.md
+		docs\technical_documentation.md = docs\technical_documentation.md
+		docs\technical_documentation_updated.md = docs\technical_documentation_updated.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{C4F97281-0DBD-4835-9ED8-7DFB966E87AA}"
+	ProjectSection(SolutionItems) = preProject
+		tools\create-issues.ps1 = tools\create-issues.ps1
+		tools\create-labels.ps1 = tools\create-labels.ps1
+		tools\create-phase-issues.ps1 = tools\create-phase-issues.ps1
+		tools\create-phase-labels.ps1 = tools\create-phase-labels.ps1
+		tools\create-secondary-labels.ps1 = tools\create-secondary-labels.ps1
+		tools\create-web-migration-issues.ps1 = tools\create-web-migration-issues.ps1
+		tools\create-web-migration-labels.ps1 = tools\create-web-migration-labels.ps1
+	EndProjectSection
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Library.UnitTests", "tests\Library.UnitTests\Library.UnitTests.csproj", "{9EA5F58E-3D25-438D-B8F8-24410AC8A9E0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Library.IntegrationTests", "tests\Library.IntegrationTests\Library.IntegrationTests.csproj", "{4C5E2868-AC96-43AB-A93B-2CE524B9FCA5}"
