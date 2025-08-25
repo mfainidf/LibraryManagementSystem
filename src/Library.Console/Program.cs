@@ -12,8 +12,22 @@ namespace Library.Console
 {
     public class Program
     {
+        private static volatile bool _keepRunning = true;
+        
+        public static void SetKeepRunning(bool value)
+        {
+            _keepRunning = value;
+        }
+        
         public static async Task Main(string[] args)
         {
+            // Gestisce la chiusura dell'applicazione quando si preme Ctrl+C
+            System.Console.CancelKeyPress += (sender, e) =>
+            {
+                e.Cancel = true; // Previene la chiusura immediata
+                _keepRunning = false;
+            };
+
             await Logger.LogAsync("Application starting...");
             
             try
@@ -27,7 +41,21 @@ namespace Library.Console
                     await Logger.LogAsync("Database initialized");
 
                     var authMenu = scope.ServiceProvider.GetRequiredService<AuthenticationMenu>();
+                    
+                    // Create a task to monitor the keepRunning flag
+                    var monitorTask = Task.Run(async () => {
+                        while (_keepRunning)
+                        {
+                            await Task.Delay(100);
+                        }
+                        await authMenu.Shutdown();
+                    });
+
+                    // Show the menu
                     await authMenu.ShowMainMenuAsync();
+                    
+                    // Wait for the monitor task to complete
+                    await monitorTask;
                 }
             }
             catch (Exception ex)

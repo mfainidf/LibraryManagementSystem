@@ -8,16 +8,27 @@ namespace Library.Console
     public class AuthenticationMenu
     {
         private readonly IAuthenticationService _authService;
+        private readonly IUserRepository _userRepository;
         private User? _currentUser;
+        private volatile bool _isRunning = true;
 
-        public AuthenticationMenu(IAuthenticationService authService)
+        public async Task Shutdown()
+        {
+            _isRunning = false;
+            _currentUser = null;
+            Program.SetKeepRunning(false); // Signal the program to stop
+            await Task.CompletedTask;
+        }
+
+        public AuthenticationMenu(IAuthenticationService authService, IUserRepository userRepository)
         {
             _authService = authService;
+            _userRepository = userRepository;
         }
 
         public async Task ShowMainMenuAsync()
         {
-            while (true)
+            while (_isRunning)
             {
                 if (_currentUser == null)
                 {
@@ -45,6 +56,7 @@ namespace Library.Console
                             await RegisterAsync();
                             break;
                         case "3":
+                            await Shutdown();
                             return;
                         default:
                             System.Console.WriteLine("Invalid option. Press any key to continue...");
@@ -169,9 +181,10 @@ namespace Library.Console
             
             if (_currentUser.Role == UserRole.Administrator)
             {
-                System.Console.WriteLine("2. Register New Admin");
-                System.Console.WriteLine("3. Promote User to Admin");
-                System.Console.WriteLine("4. Logout");
+                System.Console.WriteLine("2. List All Users");
+                System.Console.WriteLine("3. Register New Admin");
+                System.Console.WriteLine("4. Promote User to Admin");
+                System.Console.WriteLine("5. Logout");
                 System.Console.Write("\nSelect an option: ");
 
                 switch (System.Console.ReadLine())
@@ -180,12 +193,15 @@ namespace Library.Console
                         await ChangePasswordAsync();
                         break;
                     case "2":
-                        await RegisterAdminAsync();
+                        await ListAllUsersAsync();
                         break;
                     case "3":
-                        await PromoteToAdminAsync();
+                        await RegisterAdminAsync();
                         break;
                     case "4":
+                        await PromoteToAdminAsync();
+                        break;
+                    case "5":
                         _currentUser = null;
                         System.Console.WriteLine("\nLogged out successfully. Press any key to continue...");
                         System.Console.ReadKey();
@@ -348,6 +364,32 @@ namespace Library.Console
                 System.Console.WriteLine("Press any key to continue...");
                 System.Console.ReadKey();
             }
+        }
+
+        private async Task ListAllUsersAsync()
+        {
+            if (_currentUser?.Role != UserRole.Administrator)
+            {
+                throw new InvalidOperationException("Only administrators can list users");
+            }
+
+            System.Console.Clear();
+            System.Console.WriteLine("=== Users List ===\n");
+            
+            var users = await _userRepository.GetAllAsync();
+            foreach (var user in users)
+            {
+                System.Console.WriteLine($"ID: {user.Id}");
+                System.Console.WriteLine($"Name: {user.Name}");
+                System.Console.WriteLine($"Email: {user.Email}");
+                System.Console.WriteLine($"Role: {user.Role}");
+                System.Console.WriteLine($"Status: {(user.IsEnabled ? "Enabled" : "Disabled")}");
+                System.Console.WriteLine($"Created: {user.CreatedAt:yyyy-MM-dd HH:mm:ss}");
+                System.Console.WriteLine(new string('-', 50));
+            }
+
+            System.Console.WriteLine("\nPress any key to continue...");
+            System.Console.ReadKey();
         }
 
         private string ReadPassword()
