@@ -34,13 +34,29 @@ jobs:
 
   security:
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
     steps:
     - uses: actions/checkout@v3
     
-    - name: Run CodeQL
-      uses: github/codeql-action/init@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 9.0.x
+    
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
       with:
         languages: csharp
         
+    - name: Build with CodeQL
+      run: |
+        dotnet restore
+        dotnet build --no-restore
+        
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:csharp"

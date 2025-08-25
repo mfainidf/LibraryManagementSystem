@@ -1,0 +1,22 @@
+{"Timestamp":"2025-08-25T10:45:08.5698017+02:00","Level":"Information","MessageTemplate":"Login attempt for user {Email}","Properties":{"Email":"mfaini@libero.it"}}
+{"Timestamp":"2025-08-25T10:45:08.8648279+02:00","Level":"Warning","MessageTemplate":"Login failed: User {Email} not found or disabled","Properties":{"Email":"mfaini@libero.it"}}
+{"Timestamp":"2025-08-25T10:45:44.6611252+02:00","Level":"Information","MessageTemplate":"Login attempt for user {Email}","Properties":{"Email":"mfaini@libero.it"}}
+{"Timestamp":"2025-08-25T10:45:44.6701109+02:00","Level":"Warning","MessageTemplate":"Login failed: User {Email} not found or disabled","Properties":{"Email":"mfaini@libero.it"}}
+{"Timestamp":"2025-08-25T10:46:25.1168617+02:00","Level":"Information","MessageTemplate":"Starting user registration for {Email}","Properties":{"Email":"fabio@libero.it"}}
+{"Timestamp":"2025-08-25T10:46:25.4450970+02:00","Level":"Information","MessageTemplate":"User {Email} successfully registered with role {Role}","Properties":{"Email":"fabio@libero.it","Role":"User"}}
+{"Timestamp":"2025-08-25T10:47:13.8768946+02:00","Level":"Information","MessageTemplate":"Login attempt for user {Email}","Properties":{"Email":"fabio@libero.it"}}
+{"Timestamp":"2025-08-25T10:47:14.0707182+02:00","Level":"Information","MessageTemplate":"User {Email} successfully logged in","Properties":{"Email":"fabio@libero.it"}}
+{"Timestamp":"2025-08-25T11:14:26.1710579+02:00","Level":"Information","MessageTemplate":"Starting user registration for {Email}","Properties":{"Email":"carlo@libero.it"}}
+{"Timestamp":"2025-08-25T11:14:26.7543058+02:00","Level":"Information","MessageTemplate":"User {Email} successfully registered with role {Role}","Properties":{"Email":"carlo@libero.it","Role":"User"}}
+{"Timestamp":"2025-08-25T11:14:49.6798429+02:00","Level":"Information","MessageTemplate":"Login attempt for user {Email}","Properties":{"Email":"carlo@libero.it"}}
+{"Timestamp":"2025-08-25T11:14:49.9318026+02:00","Level":"Information","MessageTemplate":"User {Email} successfully logged in","Properties":{"Email":"carlo@libero.it"}}
+{"Timestamp":"2025-08-25T11:20:52.6850998+02:00","Level":"Information","MessageTemplate":"Login attempt for user {Email}","Properties":{"Email":"marco@libero.it"}}
+{"Timestamp":"2025-08-25T11:20:52.6991287+02:00","Level":"Warning","MessageTemplate":"Login failed: User {Email} not found or disabled","Properties":{"Email":"marco@libero.it"}}
+{"Timestamp":"2025-08-25T11:21:17.4852337+02:00","Level":"Information","MessageTemplate":"Login attempt for user {Email}","Properties":{"Email":"mfaini@libero.it"}}
+{"Timestamp":"2025-08-25T11:21:17.4874205+02:00","Level":"Warning","MessageTemplate":"Login failed: User {Email} not found or disabled","Properties":{"Email":"mfaini@libero.it"}}
+{"Timestamp":"2025-08-25T11:23:18.5615761+02:00","Level":"Information","MessageTemplate":"Starting admin registration for {Email}","Properties":{"Email":"marco@libero.it"}}
+{"Timestamp":"2025-08-25T11:23:18.8966390+02:00","Level":"Information","MessageTemplate":"Admin user {Email} successfully registered","Properties":{"Email":"marco@libero.it"}}
+{"Timestamp":"2025-08-25T11:23:43.8870183+02:00","Level":"Information","MessageTemplate":"Login attempt for user {Email}","Properties":{"Email":"marco@libero.it"}}
+{"Timestamp":"2025-08-25T11:23:44.1207495+02:00","Level":"Information","MessageTemplate":"User {Email} successfully logged in","Properties":{"Email":"marco@libero.it"}}
+{"Timestamp":"2025-08-25T11:30:47.0264719+02:00","Level":"Information","MessageTemplate":"Login attempt for user {Email}","Properties":{"Email":"marco@libero.it"}}
+{"Timestamp":"2025-08-25T11:30:47.3452313+02:00","Level":"Information","MessageTemplate":"User {Email} successfully logged in","Properties":{"Email":"marco@libero.it"}}
