@@ -144,6 +144,11 @@ namespace Library.Infrastructure.Services
             return true;
         }
 
+        public async Task<bool> HasAdministratorAsync()
+        {
+            return await _userRepository.HasUserWithRoleAsync(UserRole.Administrator);
+        }
+
         public async Task<User> RegisterAdminAsync(string name, string email, string password)
         {
             _logger.Information("Starting admin registration for {Email}", email);

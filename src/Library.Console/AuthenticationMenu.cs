@@ -23,6 +23,14 @@ namespace Library.Console
                 {
                     System.Console.Clear();
                     System.Console.WriteLine("=== Library Management System ===");
+                    
+                    var hasAdmin = await _authService.HasAdministratorAsync();
+                    if (!hasAdmin)
+                    {
+                        System.Console.WriteLine("WARNING: No administrator account found in the system!");
+                        System.Console.WriteLine("The first user to register will be made an administrator.");
+                    }
+                    
                     System.Console.WriteLine("1. Login");
                     System.Console.WriteLine("2. Register");
                     System.Console.WriteLine("3. Exit");
@@ -124,8 +132,19 @@ namespace Library.Console
 
             try
             {
-                var user = await _authService.RegisterUserAsync(name, email, password);
-                System.Console.WriteLine($"\nRegistration successful! Welcome {user.Name}!");
+                User user;
+                if (!await _authService.HasAdministratorAsync())
+                {
+                    // Se non c'è un amministratore, registra il primo utente come admin
+                    user = await _authService.RegisterAdminAsync(name, email, password);
+                    System.Console.WriteLine($"\nRegistration successful! Welcome {user.Name}!");
+                    System.Console.WriteLine("You have been registered as the system administrator.");
+                }
+                else
+                {
+                    user = await _authService.RegisterUserAsync(name, email, password);
+                    System.Console.WriteLine($"\nRegistration successful! Welcome {user.Name}!");
+                }
                 System.Console.WriteLine("Press any key to continue...");
                 System.Console.ReadKey();
             }

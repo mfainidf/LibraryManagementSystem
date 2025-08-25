@@ -42,5 +42,10 @@ namespace Library.Infrastructure.Repositories
         {
             return await _context.Users.AnyAsync(u => u.Email == email);
         }
+
+        public async Task<bool> HasUserWithRoleAsync(UserRole role)
+        {
+            return await _context.Users.AnyAsync(u => u.Role == role && u.IsEnabled);
+        }
     }
 }

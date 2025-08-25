@@ -11,5 +11,6 @@ namespace Library.Core.Interfaces
         Task<bool> ResetPasswordAsync(int userId, string newPassword);
         Task<bool> SetUserRoleAsync(int userId, UserRole newRole);
         Task<User> RegisterAdminAsync(string name, string email, string password);
+        Task<bool> HasAdministratorAsync();
     }
 }
