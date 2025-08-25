@@ -1,0 +1,2 @@
+{"Timestamp":"2025-08-25T22:44:38.4177517+02:00","Level":"Information","MessageTemplate":"Starting user registration for {Email}","TraceId":"9fc179a47c322a1b021b959d73d21a99","SpanId":"a0b76ce71e9816c7","Properties":{"Email":"a***2@example.com"}}
+{"Timestamp":"2025-08-25T22:44:39.4703379+02:00","Level":"Information","MessageTemplate":"User {Email} successfully registered with role {Role}","TraceId":"9fc179a47c322a1b021b959d73d21a99","SpanId":"a0b76ce71e9816c7","Properties":{"Email":"a***2@example.com","Role":"User"}}

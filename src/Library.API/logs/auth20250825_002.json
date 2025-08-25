@@ -1,0 +1,2 @@
+{"Timestamp":"2025-08-25T22:48:06.8694943+02:00","Level":"Information","MessageTemplate":"Login attempt for user {Email}","TraceId":"2494e92c20dd8d62d1a937b9990c58a5","SpanId":"ef56108525890b0b","Properties":{"Email":"a***2@example.com"}}
+{"Timestamp":"2025-08-25T22:48:07.3368515+02:00","Level":"Information","MessageTemplate":"User {Email} successfully logged in","TraceId":"2494e92c20dd8d62d1a937b9990c58a5","SpanId":"ef56108525890b0b","Properties":{"Email":"admin2@example.com"}}
