@@ -1,6 +1,6 @@
 # Specifiche Tecniche - Sistema Gestione Biblioteca
 
-## 📐 Architettura del Sistema
+## �📐 Architettura del Sistema
 
 ### Architettura N-Tier
 ```
@@ -46,6 +46,43 @@ Il sistema è strutturato seguendo i principi di Clean Architecture e utilizza i
    public interface ICommandHandler<TCommand, TResponse>
    public interface IQueryHandler<TQuery, TResponse>
    ```
+## � Strategia di Migrazione Console → Web
+
+### Approccio di Migrazione
+La migrazione da interfaccia console a web seguirà un approccio graduale e modulare:
+
+1. **Fase Preparatoria**
+   - Analisi delle dipendenze UI attuali
+   - Identificazione dei punti di accoppiamento UI/Business Logic
+   - Definizione delle interfacce di astrazione per i servizi
+   - Piano di refactoring per massima riusabilità
+
+2. **Architettura Web Target**
+   ```
+   ┌────────────────┐     ┌────────────────┐
+   │   Web Client   │ ←── │    API Layer   │
+   │   (React/TS)   │     │  (ASP.NET Web  │
+   └────────────────┘     │     API)       │
+           ↑              └────────────────┘
+           │                      ↑
+           │              ┌────────────────┐
+           └────────────→ │  Business Logic│
+                         │     Layer      │
+                         └────────────────┘
+   ```
+
+3. **Strategia di Implementazione**
+   - Sviluppo API RESTful mantenendo la business logic esistente
+   - Implementazione graduale delle feature web
+   - Coesistenza temporanea di console e web UI
+   - Testing parallelo delle due interfacce
+
+4. **Priorità di Migrazione**
+   1. Autenticazione e gestione utenti
+   2. Operazioni di lettura catalogo
+   3. Operazioni di gestione prestiti
+   4. Funzionalità amministrative
+   5. Features avanzate
 
 ## 🏗 Struttura del Progetto
 
