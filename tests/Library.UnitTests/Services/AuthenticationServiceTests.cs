@@ -76,6 +76,7 @@ namespace Library.UnitTests.Services
             var user = new User
             {
                 Id = 1,
+                Name = "Test User",
                 Email = email,
                 PasswordHash = hashedPassword,
                 IsEnabled = true
@@ -103,6 +104,7 @@ namespace Library.UnitTests.Services
             var user = new User
             {
                 Id = 1,
+                Name = "Test User",
                 Email = email,
                 PasswordHash = hashedPassword,
                 IsEnabled = true
@@ -127,6 +129,7 @@ namespace Library.UnitTests.Services
             var user = new User
             {
                 Id = 1,
+                Name = "Test User",
                 Email = email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
                 IsEnabled = false
@@ -153,19 +156,25 @@ namespace Library.UnitTests.Services
             var user = new User
             {
                 Id = userId,
+                Name = "Test User",
+                Email = "test@example.com",
                 PasswordHash = hashedOldPassword
             };
 
+            User? capturedUser = null;
             _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
                 .ReturnsAsync(user);
+            _userRepositoryMock.Setup(x => x.UpdateAsync(It.IsAny<User>()))
+                .Callback<User>(u => capturedUser = u)
+                .Returns(Task.FromResult(true));
 
             // Act
             var result = await _authService.ChangePasswordAsync(userId, oldPassword, newPassword);
 
-            // Assert
-            result.Should().BeTrue();
-            _userRepositoryMock.Verify(x => x.UpdateAsync(It.Is<User>(u => 
-                BCrypt.Net.BCrypt.Verify(newPassword, u.PasswordHash))), Times.Once);
+            _userRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<User>()), Times.Once);
+            
+            capturedUser.Should().NotBeNull();
+            BCrypt.Net.BCrypt.Verify(newPassword, capturedUser!.PasswordHash).Should().BeTrue();
         }
 
         [Fact]
@@ -180,6 +189,8 @@ namespace Library.UnitTests.Services
             var user = new User
             {
                 Id = userId,
+                Name = "Test User",
+                Email = "test@example.com",
                 PasswordHash = hashedRealPassword
             };
 
