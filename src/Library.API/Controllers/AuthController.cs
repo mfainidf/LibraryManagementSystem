@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Library.API.Configuration;
+using Library.API.Models;
 using Library.Core.Interfaces;
 using Library.Core.Models;
 
@@ -31,11 +32,11 @@ namespace Library.API.Controllers
                 var user = await _authService.LoginAsync(request.Email, request.Password);
                 var token = GenerateJwtToken(user);
 
-                return Ok(new { Token = token });
+                return Ok(new TokenResponse { Token = token });
             }
             catch (Exception ex)
             {
-                return Unauthorized(new { Message = ex.Message });
+                return Unauthorized(new MessageResponse { Message = ex.Message });
             }
         }
 
@@ -47,11 +48,11 @@ namespace Library.API.Controllers
                 var user = await _authService.RegisterUserAsync(request.Name, request.Email, request.Password);
                 var token = GenerateJwtToken(user);
 
-                return Ok(new { Token = token });
+                return Ok(new TokenResponse { Token = token });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new MessageResponse { Message = ex.Message });
             }
         }
 
@@ -64,11 +65,11 @@ namespace Library.API.Controllers
                 var user = await _authService.RegisterAdminAsync(request.Name, request.Email, request.Password);
                 var token = GenerateJwtToken(user);
 
-                return Ok(new { Token = token });
+                return Ok(new TokenResponse { Token = token });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new MessageResponse { Message = ex.Message });
             }
         }
 
@@ -82,21 +83,24 @@ namespace Library.API.Controllers
                     throw new InvalidOperationException("User ID not found in token"));
 
                 await _authService.ChangePasswordAsync(userId, request.CurrentPassword, request.NewPassword);
-                return Ok(new { Message = "Password changed successfully" });
+                return Ok(new MessageResponse { Message = "Password changed successfully" });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                return BadRequest(new MessageResponse { Message = ex.Message });
             }
         }
 
         private string GenerateJwtToken(User user)
         {
-            var jwtSettings = _configuration.GetSection("JwtSettings").Get<JwtSettings>();
-            if (jwtSettings == null)
-                throw new InvalidOperationException("JWT settings are not configured");
+            var jwtSection = _configuration.GetSection("JwtSettings");
+            var secretKey = jwtSection["SecretKey"] ?? throw new InvalidOperationException("JWT Secret Key is not configured");
+            var issuer = jwtSection["Issuer"] ?? throw new InvalidOperationException("JWT Issuer is not configured");
+            var audience = jwtSection["Audience"] ?? throw new InvalidOperationException("JWT Audience is not configured");
+            var expirationHoursStr = jwtSection["ExpirationHours"] ?? "24";
+            var expirationHours = double.Parse(expirationHoursStr);
 
-            var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey);
+            var key = Encoding.ASCII.GetBytes(secretKey);
             var tokenHandler = new JwtSecurityTokenHandler();
             var tokenDescriptor = new SecurityTokenDescriptor
             {
@@ -107,9 +111,9 @@ namespace Library.API.Controllers
                     new Claim(ClaimTypes.Email, user.Email),
                     new Claim(ClaimTypes.Role, user.Role.ToString())
                 }),
-                Expires = DateTime.UtcNow.AddHours(jwtSettings.ExpirationHours),
-                Issuer = jwtSettings.Issuer,
-                Audience = jwtSettings.Audience,
+                Expires = DateTime.UtcNow.AddHours(expirationHours),
+                Issuer = issuer,
+                Audience = audience,
                 SigningCredentials = new SigningCredentials(
                     new SymmetricSecurityKey(key),
                     SecurityAlgorithms.HmacSha256Signature
