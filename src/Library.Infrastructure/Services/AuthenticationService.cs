@@ -12,6 +12,21 @@ namespace Library.Infrastructure.Services
         private readonly IUserRepository _userRepository;
         private readonly ILogger _logger;
 
+        private static string MaskEmail(string email)
+        {
+            if (string.IsNullOrEmpty(email)) return email;
+            var parts = email.Split('@');
+            if (parts.Length != 2) return email;
+            
+            var name = parts[0];
+            var domain = parts[1];
+            var maskedName = name.Length <= 2 
+                ? name 
+                : $"{name[0]}***{name[^1]}";
+            
+            return $"{maskedName}@{domain}";
+        }
+
         public AuthenticationService(IUserRepository userRepository)
         {
             _userRepository = userRepository;
@@ -25,11 +40,12 @@ namespace Library.Infrastructure.Services
 
         public async Task<User> RegisterUserAsync(string name, string email, string password)
         {
-            _logger.Information("Starting user registration for {Email}", email);
+            var maskedEmail = MaskEmail(email);
+            _logger.Information("Starting user registration for {Email}", maskedEmail);
 
             if (await _userRepository.EmailExistsAsync(email))
             {
-                _logger.Warning("Registration failed: Email {Email} already exists", email);
+                _logger.Warning("Registration failed: Email {Email} already exists", maskedEmail);
                 throw new InvalidOperationException("Email already exists");
             }
 
@@ -46,25 +62,26 @@ namespace Library.Infrastructure.Services
             try 
             {
                 var createdUser = await _userRepository.CreateAsync(user);
-                _logger.Information("User {Email} successfully registered with role {Role}", email, user.Role);
+                _logger.Information("User {Email} successfully registered with role {Role}", maskedEmail, user.Role);
                 return createdUser;
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "Error registering user {Email}", email);
+                _logger.Error(ex, "Error registering user {Email}", maskedEmail);
                 throw;
             }
         }
 
         public async Task<User> LoginAsync(string email, string password)
         {
-            _logger.Information("Login attempt for user {Email}", email);
+            var maskedEmail = MaskEmail(email);
+            _logger.Information("Login attempt for user {Email}", maskedEmail);
             
             var user = await _userRepository.GetByEmailAsync(email);
             
             if (user == null || !user.IsEnabled)
             {
-                _logger.Warning("Login failed: User {Email} not found or disabled", email);
+                _logger.Warning("Login failed: User {Email} not found or disabled", maskedEmail);
                 throw new InvalidOperationException("Invalid credentials or account disabled");
             }
 
