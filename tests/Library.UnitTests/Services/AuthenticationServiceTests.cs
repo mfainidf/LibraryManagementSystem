@@ -23,6 +23,8 @@ namespace Library.UnitTests.Services
         [Fact]
         public async Task RegisterUser_WithValidData_ShouldCreateUser()
         {
+            System.Diagnostics.Debugger.Break();  // Forza il debugger a fermarsi qui
+            
             // Arrange
             var name = "Test User";
             var email = "test@example.com";

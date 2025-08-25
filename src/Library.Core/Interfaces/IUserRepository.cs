@@ -11,5 +11,6 @@ namespace Library.Core.Interfaces
         Task UpdateAsync(User user);
         Task<bool> EmailExistsAsync(string email);
         Task<bool> HasUserWithRoleAsync(UserRole role);
+        Task<IEnumerable<User>> GetAllAsync();
     }
 }

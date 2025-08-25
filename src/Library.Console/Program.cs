@@ -30,11 +30,14 @@ namespace Library.Console
 
             await Logger.LogAsync("Application starting...");
             
+            IServiceProvider? serviceProvider = null;
             try
             {
-                var services = ConfigureServices();
+                var services = new ServiceCollection();
+                ConfigureServices(services);
+                serviceProvider = services.BuildServiceProvider();
                 
-                using (var scope = services.CreateScope())
+                using (var scope = serviceProvider.CreateScope())
                 {
                     var dbContext = scope.ServiceProvider.GetRequiredService<LibraryDbContext>();
                     await dbContext.Database.EnsureCreatedAsync();
@@ -42,35 +45,73 @@ namespace Library.Console
 
                     var authMenu = scope.ServiceProvider.GetRequiredService<AuthenticationMenu>();
                     
+                    using var cts = new System.Threading.CancellationTokenSource();
+                    
                     // Create a task to monitor the keepRunning flag
                     var monitorTask = Task.Run(async () => {
-                        while (_keepRunning)
+                        try
                         {
-                            await Task.Delay(100);
+                            while (_keepRunning && !cts.Token.IsCancellationRequested)
+                            {
+                                await Task.Delay(100, cts.Token);
+                            }
+                            await authMenu.Shutdown();
                         }
-                        await authMenu.Shutdown();
-                    });
+                        catch (OperationCanceledException)
+                        {
+                            // Task cancelled normally, just exit
+                        }
+                    }, cts.Token);
 
                     // Show the menu
                     await authMenu.ShowMainMenuAsync();
                     
-                    // Wait for the monitor task to complete
+                    // Signal cancellation and wait for the monitor task to complete
+                    cts.Cancel();
                     await monitorTask;
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                await Logger.LogAsync($"Application error: {ex.Message}", LogType.Error);
+                // Log solo errori non relativi alla cancellazione
+                try
+                {
+                    await Logger.LogAsync($"Application error: {ex.Message}", LogType.Error);
+                }
+                catch (IOException)
+                {
+                    // Ignora errori di I/O durante la chiusura
+                }
                 throw;
             }
-            
-            await Logger.LogAsync("Application shutting down...");
+            catch (OperationCanceledException)
+            {
+                // Gestione normale della cancellazione
+            }
+            finally
+            {
+                try
+                {
+                    if (serviceProvider is IAsyncDisposable asyncDisposable)
+                    {
+                        await asyncDisposable.DisposeAsync();
+                    }
+                    else if (serviceProvider is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+                    
+                    await Logger.LogAsync("Application shutting down...");
+                }
+                catch (Exception ex) when (ex is IOException or ObjectDisposedException)
+                {
+                    // Ignora errori di I/O e ObjectDisposed durante lo shutdown
+                }
+            }
         }
 
-        private static IServiceProvider ConfigureServices()
+        private static void ConfigureServices(IServiceCollection services)
         {
-            var services = new ServiceCollection();
-
             // Database
             services.AddDbContext<LibraryDbContext>(options =>
                 options.UseSqlite("Data Source=library.db"));
@@ -82,9 +123,8 @@ namespace Library.Console
             services.AddScoped<IAuthenticationService, AuthenticationService>();
 
             // UI
+            services.AddSingleton<ConsoleManager>();
             services.AddScoped<AuthenticationMenu>();
-
-            return services.BuildServiceProvider();
         }
     }
 }

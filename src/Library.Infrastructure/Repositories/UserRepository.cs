@@ -47,5 +47,10 @@ namespace Library.Infrastructure.Repositories
         {
             return await _context.Users.AnyAsync(u => u.Role == role && u.IsEnabled);
         }
+
+        public async Task<IEnumerable<User>> GetAllAsync()
+        {
+            return await _context.Users.ToListAsync();
+        }
     }
 }
