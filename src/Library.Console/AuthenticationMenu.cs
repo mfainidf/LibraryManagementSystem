@@ -145,25 +145,58 @@ namespace Library.Console
             }
 
             System.Console.Clear();
-            System.Console.WriteLine($"=== Welcome {_currentUser.Name} ===");
+            System.Console.WriteLine($"=== Welcome {_currentUser.Name} ({_currentUser.Role}) ===");
             System.Console.WriteLine("1. Change Password");
-            System.Console.WriteLine("2. Logout");
-            System.Console.Write("\nSelect an option: ");
-
-            switch (System.Console.ReadLine())
+            
+            if (_currentUser.Role == UserRole.Administrator)
             {
-                case "1":
-                    await ChangePasswordAsync();
-                    break;
-                case "2":
-                    _currentUser = null;
-                    System.Console.WriteLine("\nLogged out successfully. Press any key to continue...");
-                    System.Console.ReadKey();
-                    break;
-                default:
-                    System.Console.WriteLine("Invalid option. Press any key to continue...");
-                    System.Console.ReadKey();
-                    break;
+                System.Console.WriteLine("2. Register New Admin");
+                System.Console.WriteLine("3. Promote User to Admin");
+                System.Console.WriteLine("4. Logout");
+                System.Console.Write("\nSelect an option: ");
+
+                switch (System.Console.ReadLine())
+                {
+                    case "1":
+                        await ChangePasswordAsync();
+                        break;
+                    case "2":
+                        await RegisterAdminAsync();
+                        break;
+                    case "3":
+                        await PromoteToAdminAsync();
+                        break;
+                    case "4":
+                        _currentUser = null;
+                        System.Console.WriteLine("\nLogged out successfully. Press any key to continue...");
+                        System.Console.ReadKey();
+                        break;
+                    default:
+                        System.Console.WriteLine("Invalid option. Press any key to continue...");
+                        System.Console.ReadKey();
+                        break;
+                }
+            }
+            else
+            {
+                System.Console.WriteLine("2. Logout");
+                System.Console.Write("\nSelect an option: ");
+
+                switch (System.Console.ReadLine())
+                {
+                    case "1":
+                        await ChangePasswordAsync();
+                        break;
+                    case "2":
+                        _currentUser = null;
+                        System.Console.WriteLine("\nLogged out successfully. Press any key to continue...");
+                        System.Console.ReadKey();
+                        break;
+                    default:
+                        System.Console.WriteLine("Invalid option. Press any key to continue...");
+                        System.Console.ReadKey();
+                        break;
+                }
             }
         }
 
@@ -197,6 +230,97 @@ namespace Library.Console
 
                 await _authService.ChangePasswordAsync(_currentUser.Id, currentPassword, newPassword);
                 System.Console.WriteLine("\nPassword changed successfully! Press any key to continue...");
+                System.Console.ReadKey();
+            }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine($"\nError: {ex.Message}");
+                System.Console.WriteLine("Press any key to continue...");
+                System.Console.ReadKey();
+            }
+        }
+
+        private async Task RegisterAdminAsync()
+        {
+            if (_currentUser?.Role != UserRole.Administrator)
+            {
+                throw new InvalidOperationException("Only administrators can register new admins");
+            }
+
+            System.Console.Clear();
+            System.Console.WriteLine("=== Register New Admin ===");
+            
+            System.Console.Write("Name: ");
+            var name = System.Console.ReadLine();
+            
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                System.Console.WriteLine("\nName is required. Press any key to continue...");
+                System.Console.ReadKey();
+                return;
+            }
+            
+            System.Console.Write("Email: ");
+            var email = System.Console.ReadLine();
+            
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                System.Console.WriteLine("\nEmail is required. Press any key to continue...");
+                System.Console.ReadKey();
+                return;
+            }
+            
+            System.Console.Write("Password: ");
+            var password = ReadPassword();
+            
+            System.Console.Write("\nConfirm Password: ");
+            var confirmPassword = ReadPassword();
+
+            if (password != confirmPassword)
+            {
+                System.Console.WriteLine("\nPasswords do not match. Press any key to continue...");
+                System.Console.ReadKey();
+                return;
+            }
+
+            try
+            {
+                var admin = await _authService.RegisterAdminAsync(name, email, password);
+                System.Console.WriteLine($"\nAdmin registration successful! {admin.Name} is now an administrator.");
+                System.Console.WriteLine("Press any key to continue...");
+                System.Console.ReadKey();
+            }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine($"\nError: {ex.Message}");
+                System.Console.WriteLine("Press any key to continue...");
+                System.Console.ReadKey();
+            }
+        }
+
+        private async Task PromoteToAdminAsync()
+        {
+            if (_currentUser?.Role != UserRole.Administrator)
+            {
+                throw new InvalidOperationException("Only administrators can promote users to admin");
+            }
+
+            System.Console.Clear();
+            System.Console.WriteLine("=== Promote User to Admin ===");
+            
+            System.Console.Write("User ID: ");
+            if (!int.TryParse(System.Console.ReadLine(), out int userId))
+            {
+                System.Console.WriteLine("\nInvalid user ID. Press any key to continue...");
+                System.Console.ReadKey();
+                return;
+            }
+
+            try
+            {
+                await _authService.SetUserRoleAsync(userId, UserRole.Administrator);
+                System.Console.WriteLine($"\nUser with ID {userId} has been promoted to administrator.");
+                System.Console.WriteLine("Press any key to continue...");
                 System.Console.ReadKey();
             }
             catch (Exception ex)

@@ -202,5 +202,101 @@ namespace Library.UnitTests.Services
                 .Should().ThrowAsync<InvalidOperationException>()
                 .WithMessage("Invalid current password");
         }
+
+        [Fact]
+        public async Task SetUserRole_WithValidData_ShouldUpdateRole()
+        {
+            // Arrange
+            var userId = 1;
+            var newRole = UserRole.Administrator;
+
+            var user = new User
+            {
+                Id = userId,
+                Name = "Test User",
+                Email = "test@example.com",
+                PasswordHash = "dummyhash",
+                Role = UserRole.User
+            };
+
+            User? capturedUser = null;
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
+                .ReturnsAsync(user);
+            _userRepositoryMock.Setup(x => x.UpdateAsync(It.IsAny<User>()))
+                .Callback<User>(u => capturedUser = u)
+                .Returns(Task.FromResult(true));
+
+            // Act
+            var result = await _authService.SetUserRoleAsync(userId, newRole);
+
+            // Assert
+            result.Should().BeTrue();
+            capturedUser.Should().NotBeNull();
+            capturedUser!.Role.Should().Be(UserRole.Administrator);
+        }
+
+        [Fact]
+        public async Task SetUserRole_WithInvalidUserId_ShouldThrowException()
+        {
+            // Arrange
+            var userId = 1;
+            var newRole = UserRole.Administrator;
+
+            _userRepositoryMock.Setup(x => x.GetByIdAsync(userId))
+                .ReturnsAsync(default(User));
+
+            // Act & Assert
+            await _authService.Invoking(x => x.SetUserRoleAsync(userId, newRole))
+                .Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("User not found");
+        }
+
+        [Fact]
+        public async Task RegisterAdmin_WithValidData_ShouldCreateAdminUser()
+        {
+            // Arrange
+            var name = "Admin User";
+            var email = "admin@example.com";
+            var password = "AdminPass123!";
+
+            _userRepositoryMock.Setup(x => x.EmailExistsAsync(email))
+                .ReturnsAsync(false);
+
+            _userRepositoryMock.Setup(x => x.CreateAsync(It.IsAny<User>()))
+                .ReturnsAsync((User user) => user);
+
+            // Act
+            var result = await _authService.RegisterAdminAsync(name, email, password);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Name.Should().Be(name);
+            result.Email.Should().Be(email);
+            result.Role.Should().Be(UserRole.Administrator);
+            result.IsEnabled.Should().BeTrue();
+            
+            // Verify password is hashed
+            result.PasswordHash.Should().NotBe(password);
+            
+            _userRepositoryMock.Verify(x => x.CreateAsync(It.Is<User>(u => 
+                u.Role == UserRole.Administrator)), Times.Once);
+        }
+
+        [Fact]
+        public async Task RegisterAdmin_WithExistingEmail_ShouldThrowException()
+        {
+            // Arrange
+            var name = "Admin User";
+            var email = "admin@example.com";
+            var password = "AdminPass123!";
+
+            _userRepositoryMock.Setup(x => x.EmailExistsAsync(email))
+                .ReturnsAsync(true);
+
+            // Act & Assert
+            await _authService.Invoking(x => x.RegisterAdminAsync(name, email, password))
+                .Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("Email already exists");
+        }
     }
 }

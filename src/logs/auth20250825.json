@@ -1,0 +1,8 @@
+{"Timestamp":"2025-08-25T10:45:08.5698017+02:00","Level":"Information","MessageTemplate":"Login attempt for user {Email}","Properties":{"Email":"mfaini@libero.it"}}
+{"Timestamp":"2025-08-25T10:45:08.8648279+02:00","Level":"Warning","MessageTemplate":"Login failed: User {Email} not found or disabled","Properties":{"Email":"mfaini@libero.it"}}
+{"Timestamp":"2025-08-25T10:45:44.6611252+02:00","Level":"Information","MessageTemplate":"Login attempt for user {Email}","Properties":{"Email":"mfaini@libero.it"}}
+{"Timestamp":"2025-08-25T10:45:44.6701109+02:00","Level":"Warning","MessageTemplate":"Login failed: User {Email} not found or disabled","Properties":{"Email":"mfaini@libero.it"}}
+{"Timestamp":"2025-08-25T10:46:25.1168617+02:00","Level":"Information","MessageTemplate":"Starting user registration for {Email}","Properties":{"Email":"fabio@libero.it"}}
+{"Timestamp":"2025-08-25T10:46:25.4450970+02:00","Level":"Information","MessageTemplate":"User {Email} successfully registered with role {Role}","Properties":{"Email":"fabio@libero.it","Role":"User"}}
+{"Timestamp":"2025-08-25T10:47:13.8768946+02:00","Level":"Information","MessageTemplate":"Login attempt for user {Email}","Properties":{"Email":"fabio@libero.it"}}
+{"Timestamp":"2025-08-25T10:47:14.0707182+02:00","Level":"Information","MessageTemplate":"User {Email} successfully logged in","Properties":{"Email":"fabio@libero.it"}}
