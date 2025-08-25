@@ -8,7 +8,7 @@ namespace Library.Console
     public class AuthenticationMenu
     {
         private readonly IAuthenticationService _authService;
-        private User _currentUser;
+        private User? _currentUser;
 
         public AuthenticationMenu(IAuthenticationService authService)
         {
@@ -59,6 +59,13 @@ namespace Library.Console
             System.Console.Write("Email: ");
             var email = System.Console.ReadLine();
             
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                System.Console.WriteLine("\nEmail is required. Press any key to continue...");
+                System.Console.ReadKey();
+                return;
+            }
+
             System.Console.Write("Password: ");
             var password = ReadPassword();
 
@@ -85,8 +92,22 @@ namespace Library.Console
             System.Console.Write("Name: ");
             var name = System.Console.ReadLine();
             
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                System.Console.WriteLine("\nName is required. Press any key to continue...");
+                System.Console.ReadKey();
+                return;
+            }
+            
             System.Console.Write("Email: ");
             var email = System.Console.ReadLine();
+            
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                System.Console.WriteLine("\nEmail is required. Press any key to continue...");
+                System.Console.ReadKey();
+                return;
+            }
             
             System.Console.Write("Password: ");
             var password = ReadPassword();
@@ -118,6 +139,11 @@ namespace Library.Console
 
         private async Task ShowLoggedInMenuAsync()
         {
+            if (_currentUser == null)
+            {
+                throw new InvalidOperationException("User must be logged in to access this menu");
+            }
+
             System.Console.Clear();
             System.Console.WriteLine($"=== Welcome {_currentUser.Name} ===");
             System.Console.WriteLine("1. Change Password");
@@ -164,6 +190,11 @@ namespace Library.Console
 
             try
             {
+                if (_currentUser == null)
+                {
+                    throw new InvalidOperationException("User must be logged in to change password");
+                }
+
                 await _authService.ChangePasswordAsync(_currentUser.Id, currentPassword, newPassword);
                 System.Console.WriteLine("\nPassword changed successfully! Press any key to continue...");
                 System.Console.ReadKey();
