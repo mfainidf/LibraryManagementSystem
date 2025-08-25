@@ -16,7 +16,8 @@ namespace Library.Infrastructure.Services
         {
             if (string.IsNullOrEmpty(email)) return email;
             var parts = email.Split('@');
-            if (parts.Length != 2) return email;
+            if (parts.Length != 2 || string.IsNullOrEmpty(parts[0]) || string.IsNullOrEmpty(parts[1])) 
+                return email;
             
             var name = parts[0];
             var domain = parts[1];

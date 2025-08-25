@@ -16,3 +16,5 @@
 {"Timestamp":"2025-08-25T16:31:49.2726353+02:00","Level":"Information","MessageTemplate":"User {Email} successfully logged in","Properties":{"Email":"marco@libero.it"}}
 {"Timestamp":"2025-08-25T17:19:11.6621775+02:00","Level":"Information","MessageTemplate":"Login attempt for user {Email}","Properties":{"Email":"marco@libero.it"}}
 {"Timestamp":"2025-08-25T17:19:11.9969513+02:00","Level":"Information","MessageTemplate":"User {Email} successfully logged in","Properties":{"Email":"marco@libero.it"}}
+{"Timestamp":"2025-08-25T19:18:41.4084763+02:00","Level":"Information","MessageTemplate":"Login attempt for user {Email}","Properties":{"Email":"m***o@libero.it"}}
+{"Timestamp":"2025-08-25T19:18:41.7229559+02:00","Level":"Information","MessageTemplate":"User {Email} successfully logged in","Properties":{"Email":"marco@libero.it"}}
