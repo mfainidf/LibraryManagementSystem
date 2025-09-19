@@ -9,6 +9,9 @@ namespace Library.Console
     {
         private readonly IAuthenticationService _authService;
         private readonly IUserRepository _userRepository;
+        private readonly IMediaItemService _mediaItemService;
+        private readonly ICategoryService _categoryService;
+        private readonly IGenreService _genreService;
         private readonly ConsoleManager _console;
         private User? _currentUser;
         private volatile bool _isRunning = true;
@@ -31,10 +34,16 @@ namespace Library.Console
         public AuthenticationMenu(
             IAuthenticationService authService, 
             IUserRepository userRepository,
+            IMediaItemService mediaItemService,
+            ICategoryService categoryService,
+            IGenreService genreService,
             ConsoleManager console)
         {
             _authService = authService;
             _userRepository = userRepository;
+            _mediaItemService = mediaItemService;
+            _categoryService = categoryService;
+            _genreService = genreService;
             _console = console;
         }
 
@@ -194,8 +203,8 @@ namespace Library.Console
             if (_currentUser.Role == UserRole.Administrator)
             {
                 _console.WriteLine("2. List All Users");
-                _console.WriteLine("3. Register New Admin");
-                _console.WriteLine("4. Promote User to Admin");
+                _console.WriteLine("3. 👑 Admin Panel");
+                _console.WriteLine("4. 🔬 Quick Test Catalog (DEBUG)");
                 _console.WriteLine("5. Logout");
                 _console.Write("\nSelect an option: ");
 
@@ -208,10 +217,10 @@ namespace Library.Console
                         await ListAllUsersAsync();
                         break;
                     case "3":
-                        await RegisterAdminAsync();
+                        await ShowAdminPanelAsync();
                         break;
                     case "4":
-                        await PromoteToAdminAsync();
+                        await QuickTestCatalogAsync();
                         break;
                     case "5":
                         _currentUser = null;
@@ -226,7 +235,8 @@ namespace Library.Console
             }
             else
             {
-                _console.WriteLine("2. Logout");
+                _console.WriteLine("2. 🔬 Quick Test Catalog (DEBUG)");
+                _console.WriteLine("3. Logout");
                 _console.Write("\nSelect an option: ");
 
                 switch (_console.ReadLine())
@@ -235,6 +245,9 @@ namespace Library.Console
                         await ChangePasswordAsync();
                         break;
                     case "2":
+                        await QuickTestCatalogAsync();
+                        break;
+                    case "3":
                         _currentUser = null;
                         _console.WriteLine("\nLogged out successfully. Press any key to continue...");
                         _console.ReadKey();
@@ -402,6 +415,36 @@ namespace Library.Console
 
             _console.WriteLine("\nPress any key to continue...");
             _console.ReadKey();
+        }
+
+        private async Task ShowAdminPanelAsync()
+        {
+            if (_currentUser?.Role != UserRole.Administrator)
+            {
+                throw new InvalidOperationException("Only administrators can access the admin panel");
+            }
+
+            var adminMenu = new AdminMenu(
+                _authService,
+                _userRepository,
+                _mediaItemService,
+                _categoryService,
+                _genreService,
+                _console,
+                _currentUser);
+
+            await adminMenu.ShowMenuAsync();
+        }
+
+        private async Task QuickTestCatalogAsync()
+        {
+            if (_currentUser == null)
+            {
+                throw new InvalidOperationException("User must be logged in to access catalog test");
+            }
+
+            var quickTest = new CatalogQuickTest(_mediaItemService, _categoryService, _genreService, _console);
+            await quickTest.RunAsync(_currentUser.Id);
         }
 
         private string ReadPassword()

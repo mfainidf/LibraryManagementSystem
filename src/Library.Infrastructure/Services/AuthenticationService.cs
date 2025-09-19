@@ -28,6 +28,24 @@ namespace Library.Infrastructure.Services
             return $"{maskedName}@{domain}";
         }
 
+        private static bool IsValidEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return false;
+
+            try
+            {
+                // Simple email validation - for production use more robust validation
+                var emailRegex = new System.Text.RegularExpressions.Regex(
+                    @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$");
+                return emailRegex.IsMatch(email);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public AuthenticationService(IUserRepository userRepository)
         {
             _userRepository = userRepository;
@@ -43,6 +61,13 @@ namespace Library.Infrastructure.Services
         {
             var maskedEmail = MaskEmail(email);
             _logger.Information("Starting user registration for {Email}", maskedEmail);
+
+            // Validate email format
+            if (!IsValidEmail(email))
+            {
+                _logger.Warning("Registration failed: Invalid email format for {Email}", maskedEmail);
+                throw new ArgumentException("Invalid email format");
+            }
 
             if (await _userRepository.EmailExistsAsync(email))
             {
@@ -170,6 +195,13 @@ namespace Library.Infrastructure.Services
         public async Task<User> RegisterAdminAsync(string name, string email, string password)
         {
             _logger.Information("Starting admin registration for {Email}", email);
+
+            // Validate email format
+            if (!IsValidEmail(email))
+            {
+                _logger.Warning("Admin registration failed: Invalid email format for {Email}", email);
+                throw new ArgumentException("Invalid email format");
+            }
 
             if (await _userRepository.EmailExistsAsync(email))
             {

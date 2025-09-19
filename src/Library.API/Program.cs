@@ -1,30 +1,29 @@
+using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Library.Infrastructure.Data;
-using Library.API;
 
-var builder = WebApplication.CreateBuilder(args);
-var startup = new Startup(builder.Configuration);
-startup.ConfigureServices(builder.Services);
-
-var app = builder.Build();
-startup.Configure(app, app.Environment);
-
-// Ensure database is created
-using (var scope = app.Services.CreateScope())
+namespace Library.API
 {
-    var context = scope.ServiceProvider.GetRequiredService<LibraryDbContext>();
-    context.Database.EnsureCreated();
+    public partial class Program
+    {
+        public static void Main(string[] args)
+        {
+            CreateHostBuilder(args).Build().Run();
+        }
+
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder.ConfigureServices(services =>
+                    {
+                        // The Startup class will be used to configure services in ConfigureWebHost
+                    });
+
+                    webBuilder.UseStartup<Startup>();
+                });
+    }
 }
-
-app.Run();
-
-// Ensure database is created
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<LibraryDbContext>();
-    context.Database.EnsureCreated();
-}
-
-app.Run();

@@ -14,10 +14,12 @@ namespace Library.API;
 public class Startup
 {
     public IConfiguration Configuration { get; }
+    private readonly IWebHostEnvironment _env;
 
-    public Startup(IConfiguration configuration)
+    public Startup(IConfiguration configuration, IWebHostEnvironment env)
     {
         Configuration = configuration;
+        _env = env;
     }
 
     public void ConfigureServices(IServiceCollection services)
@@ -75,12 +77,21 @@ public class Startup
         });
 
         // Configure Database
-        services.AddDbContext<LibraryDbContext>(options =>
-            options.UseSqlite(Configuration.GetConnectionString("DefaultConnection")));
+        // If running in test environment, skip DB registration here so tests can replace it with InMemory provider
+        if (!_env.IsEnvironment("Testing"))
+        {
+            services.AddDbContext<LibraryDbContext>(options =>
+                options.UseSqlite(Configuration.GetConnectionString("DefaultConnection")));
+        }
 
         // Configure Services
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
+    // Media repository and services
+    services.AddScoped<Library.Core.Interfaces.IMediaItemRepository, Library.Infrastructure.Repositories.MediaItemRepository>();
+    services.AddScoped<Library.Infrastructure.Services.MediaItemService>();
+    // Application services
+    services.AddScoped<Library.Application.Services.SearchService>();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

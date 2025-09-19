@@ -118,9 +118,15 @@ namespace Library.Console
 
             // Repositories
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IMediaItemRepository, MediaItemRepository>();
+            services.AddScoped<ICategoryRepository, CategoryRepository>();
+            services.AddScoped<IGenreRepository, GenreRepository>();
 
             // Services
             services.AddScoped<IAuthenticationService, AuthenticationService>();
+            services.AddScoped<IMediaItemService, MediaItemService>();
+            services.AddScoped<ICategoryService, CategoryService>();
+            services.AddScoped<IGenreService, GenreService>();
 
             // UI
             services.AddSingleton<ConsoleManager>();

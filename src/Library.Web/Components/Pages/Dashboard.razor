@@ -1,0 +1,256 @@
+@page "/dashboard"
+@using Library.Core.Interfaces
+@using Library.Core.Models
+@using Library.Web.Services
+@inject WebAuthenticationService WebAuth
+@inject IMediaItemService MediaItemService
+@inject ICategoryService CategoryService
+@inject IGenreService GenreService
+@inject IUserRepository UserRepository
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>Dashboard - Library Management</PageTitle>
+
+@if (!WebAuth.IsAuthenticated())
+{
+    <div class="container mt-5">
+        <div class="alert alert-warning text-center">
+            <h4><i class="fas fa-exclamation-triangle"></i> Access Denied</h4>
+            <p>You need to login to access the dashboard.</p>
+            <a href="/login" class="btn btn-primary">Go to Login</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="container-fluid mt-3">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2><i class="fas fa-tachometer-alt"></i> Dashboard</h2>
+                        <p class="text-muted mb-0">Welcome back, @WebAuth.GetCurrentUser()?.Name!</p>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle"></i> @WebAuth.GetCurrentUser()?.Name
+                            <span class="badge bg-@GetRoleBadgeColor() ms-2">@WebAuth.GetCurrentUser()?.Role.ToString()</span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/profile"><i class="fas fa-user"></i> Profile</a></li>
+                            @if (WebAuth.IsAdmin())
+                            {
+                                <li><a class="dropdown-item" href="/admin"><i class="fas fa-crown"></i> Admin Panel</a></li>
+                            }
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button class="dropdown-item" @onclick="HandleLogout"><i class="fas fa-sign-out-alt"></i> Logout</button></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title">@totalMediaItems</h4>
+                                <p class="card-text">Total Media Items</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-book fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title">@availableMediaItems</h4>
+                                <p class="card-text">Available Items</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title">@totalCategories</h4>
+                                <p class="card-text">Categories</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-tags fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title">@totalUsers</h4>
+                                <p class="card-text">Total Users</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-users fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-plus-circle"></i> Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <a href="/media/add" class="btn btn-outline-primary">
+                                <i class="fas fa-plus"></i> Add New Media Item
+                            </a>
+                            <a href="/media" class="btn btn-outline-secondary">
+                                <i class="fas fa-list"></i> Browse Catalog
+                            </a>
+                            @if (WebAuth.IsAdmin())
+                            {
+                                <a href="/categories" class="btn btn-outline-info">
+                                    <i class="fas fa-tags"></i> Manage Categories
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-clock"></i> Recent Activity</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (recentMediaItems != null && recentMediaItems.Any())
+                        {
+                            <div class="list-group list-group-flush">
+                                @foreach (var item in recentMediaItems.Take(5))
+                                {
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>@item.Title</strong>
+                                            <small class="text-muted d-block">@item.Author</small>
+                                        </div>
+                                        <span class="badge bg-@GetMediaTypeBadgeColor(item.Type)">@item.Type</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted text-center">No recent items</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private int totalMediaItems = 0;
+    private int availableMediaItems = 0;
+    private int totalCategories = 0;
+    private int totalUsers = 0;
+    private List<MediaItem>? recentMediaItems;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // CONTROLLO SEMPLICE - senza JavaScript
+        if (!WebAuth.IsAuthenticated())
+        {
+            Navigation.NavigateTo("/login", true);
+            return;
+        }
+
+        await LoadDashboardData();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        try
+        {
+            totalMediaItems = await MediaItemService.GetTotalCountAsync();
+            availableMediaItems = await MediaItemService.GetAvailableCountAsync();
+            totalCategories = (await CategoryService.GetAllAsync()).Count();
+            totalUsers = (await UserRepository.GetAllAsync()).Count();
+            
+            // Load recent media items (last 10)
+            var allItems = await MediaItemService.GetAllAsync();
+            recentMediaItems = allItems.OrderByDescending(x => x.CreatedAt).Take(10).ToList();
+        }
+        catch (Exception ex)
+        {
+            // Log error or show notification
+            Console.WriteLine($"Error loading dashboard data: {ex.Message}");
+        }
+    }
+
+    private string GetRoleBadgeColor()
+    {
+        var role = WebAuth.GetCurrentUser()?.Role;
+        return role switch
+        {
+            UserRole.Administrator => "danger",
+            UserRole.Supervisor => "warning",
+            _ => "secondary"
+        };
+    }
+
+    private async Task HandleLogout()
+    {
+        await WebAuth.LogoutAsync();
+        Navigation.NavigateTo("/login", true);
+    }
+
+    private string GetMediaTypeBadgeColor(MediaType type)
+    {
+        return type switch
+        {
+            MediaType.Book => "primary",
+            MediaType.DVD => "success",
+            MediaType.Magazine => "info",
+            MediaType.AudioBook => "warning",
+            _ => "secondary"
+        };
+    }
+}
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("logoutUser");
+            await JSRuntime.InvokeVoidAsync("redirectTo", "/login");
+        }
+        catch
+        {
+            // Fallback redirect
+            await JSRuntime.InvokeVoidAsync("redirectTo", "/login");
+        }
+    }
+}
