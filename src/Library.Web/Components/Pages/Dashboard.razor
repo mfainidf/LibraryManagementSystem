@@ -129,7 +129,7 @@ else
                             <a href="/media/add" class="btn btn-outline-primary">
                                 <i class="fas fa-plus"></i> Add New Media Item
                             </a>
-                            <a href="/media" class="btn btn-outline-secondary">
+                            <a href="/catalog" class="btn btn-outline-secondary">
                                 <i class="fas fa-list"></i> Browse Catalog
                             </a>
                             @if (WebAuth.IsAdmin())
@@ -240,17 +240,5 @@ else
             MediaType.AudioBook => "warning",
             _ => "secondary"
         };
-    }
-}
-        try
-        {
-            await JSRuntime.InvokeVoidAsync("logoutUser");
-            await JSRuntime.InvokeVoidAsync("redirectTo", "/login");
-        }
-        catch
-        {
-            // Fallback redirect
-            await JSRuntime.InvokeVoidAsync("redirectTo", "/login");
-        }
     }
 }

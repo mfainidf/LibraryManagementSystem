@@ -44,6 +44,9 @@ builder.Services.AddScoped<IMediaItemService, MediaItemService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IGenreService, GenreService>();
 
+// Application Services
+builder.Services.AddScoped<Library.Application.Services.SearchService>();
+
 // Web Services
 builder.Services.AddScoped<WebAuthenticationService>();
 builder.Services.AddHttpContextAccessor();
