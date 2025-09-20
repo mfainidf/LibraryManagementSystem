@@ -40,4 +40,7 @@ msbuild.wrn
 *.db-wal
 
 # Logs
+logs/
 *.log
+*.log.*
+auth*.json

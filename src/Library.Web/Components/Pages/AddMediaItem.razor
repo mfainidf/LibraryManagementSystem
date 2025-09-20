@@ -1,0 +1,330 @@
+@page "/media/add"
+@using Library.Core.Models
+@using Library.Core.Interfaces
+@using Library.Web.Services
+@using Microsoft.AspNetCore.Components.Forms
+@using System.ComponentModel.DataAnnotations
+@inject IMediaItemService MediaItemService
+@inject ICategoryService CategoryService
+@inject IGenreService GenreService
+@inject WebAuthenticationService WebAuth
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>Add Media Item - Library Management</PageTitle>
+
+@if (!WebAuth.IsAuthenticated())
+{
+    <div class="container mt-5">
+        <div class="alert alert-warning text-center">
+            <h4><i class="fas fa-exclamation-triangle"></i> Access Denied</h4>
+            <p>You need to login to add media items.</p>
+            <a href="/login" class="btn btn-primary">Go to Login</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="container mt-3">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2><i class="fas fa-plus-circle"></i> Add New Media Item</h2>
+                        <p class="text-muted mb-0">Add a new book, DVD, or other media to the library collection</p>
+                    </div>
+                    <div>
+                        <a href="/dashboard" class="btn btn-outline-secondary me-2">
+                            <i class="fas fa-arrow-left"></i> Back to Dashboard
+                        </a>
+                        <a href="/catalog" class="btn btn-outline-info">
+                            <i class="fas fa-list"></i> Browse Catalog
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Form -->
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-edit"></i> Media Information</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="fas fa-exclamation-triangle"></i> @errorMessage
+                                <button type="button" class="btn-close" @onclick="ClearError"></button>
+                            </div>
+                        }
+                        
+                        @if (!string.IsNullOrEmpty(successMessage))
+                        {
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="fas fa-check-circle"></i> @successMessage
+                                <button type="button" class="btn-close" @onclick="ClearSuccess"></button>
+                            </div>
+                        }
+
+                        <EditForm Model="newMediaItem" OnValidSubmit="HandleAddMediaItem" FormName="AddMediaItemForm">
+                            <DataAnnotationsValidator />
+                            
+                            <div class="row">
+                                <!-- Basic Information -->
+                                <div class="col-md-6">
+                                    <h6 class="text-primary mb-3"><i class="fas fa-info-circle"></i> Basic Information</h6>
+                                    
+                                    <div class="mb-3">
+                                        <label for="title" class="form-label">
+                                            <i class="fas fa-heading"></i> Title *
+                                        </label>
+                                        <InputText id="title" class="form-control" @bind-Value="newMediaItem.Title" 
+                                                  placeholder="Enter the title..." />
+                                        <ValidationMessage For="@(() => newMediaItem.Title)" class="text-danger" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="author" class="form-label">
+                                            <i class="fas fa-user"></i> Author/Creator
+                                        </label>
+                                        <InputText id="author" class="form-control" @bind-Value="newMediaItem.Author" 
+                                                  placeholder="Enter the author or creator..." />
+                                        <ValidationMessage For="@(() => newMediaItem.Author)" class="text-danger" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="type" class="form-label">
+                                            <i class="fas fa-tag"></i> Media Type *
+                                        </label>
+                                        <InputSelect id="type" class="form-select" @bind-Value="newMediaItem.Type" @onchange="OnTypeChanged">
+                                            <option value="@MediaType.Book">Book</option>
+                                            <option value="@MediaType.DVD">DVD</option>
+                                            <option value="@MediaType.CD">CD</option>
+                                            <option value="@MediaType.Magazine">Magazine</option>
+                                            <option value="@MediaType.AudioBook">Audio Book</option>
+                                            <option value="@MediaType.EBook">E-Book</option>
+                                            <option value="@MediaType.BluRay">Blu-ray</option>
+                                            <option value="@MediaType.Journal">Journal</option>
+                                        </InputSelect>
+                                        <ValidationMessage For="@(() => newMediaItem.Type)" class="text-danger" />
+                                    </div>
+
+                                    @if (showISBNField)
+                                    {
+                                        <div class="mb-3">
+                                            <label for="isbn" class="form-label">
+                                                <i class="fas fa-barcode"></i> ISBN
+                                            </label>
+                                            <InputText id="isbn" class="form-control" @bind-Value="newMediaItem.ISBN" 
+                                                      placeholder="Enter the ISBN..." />
+                                            <ValidationMessage For="@(() => newMediaItem.ISBN)" class="text-danger" />
+                                            <div class="form-text">Required for books and e-books</div>
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- Additional Information -->
+                                <div class="col-md-6">
+                                    <h6 class="text-primary mb-3"><i class="fas fa-list-alt"></i> Additional Information</h6>
+                                    
+                                    <div class="mb-3">
+                                        <label for="genre" class="form-label">
+                                            <i class="fas fa-theater-masks"></i> Genre
+                                        </label>
+                                        <InputText id="genre" class="form-control" @bind-Value="newMediaItem.Genre" 
+                                                  placeholder="Enter the genre..." />
+                                        <ValidationMessage For="@(() => newMediaItem.Genre)" class="text-danger" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="category" class="form-label">
+                                            <i class="fas fa-folder"></i> Category
+                                        </label>
+                                        <InputText id="category" class="form-control" @bind-Value="newMediaItem.Category" 
+                                                  placeholder="Enter the category..." />
+                                        <ValidationMessage For="@(() => newMediaItem.Category)" class="text-danger" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="publicationDate" class="form-label">
+                                            <i class="fas fa-calendar"></i> Publication Date
+                                        </label>
+                                        <InputDate id="publicationDate" class="form-control" @bind-Value="newMediaItem.PublicationDate" />
+                                        <ValidationMessage For="@(() => newMediaItem.PublicationDate)" class="text-danger" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="quantity" class="form-label">
+                                            <i class="fas fa-cubes"></i> Quantity *
+                                        </label>
+                                        <InputNumber id="quantity" class="form-control" @bind-Value="newMediaItem.Quantity" 
+                                                    min="1" />
+                                        <ValidationMessage For="@(() => newMediaItem.Quantity)" class="text-danger" />
+                                        <div class="form-text">Number of copies available</div>
+                                    </div>
+                                </div>
+
+                                <!-- Description -->
+                                <div class="col-12">
+                                    <div class="mb-3">
+                                        <label for="description" class="form-label">
+                                            <i class="fas fa-align-left"></i> Description
+                                        </label>
+                                        <InputTextArea id="description" class="form-control" @bind-Value="newMediaItem.Description" 
+                                                      rows="4" placeholder="Enter a description..." />
+                                        <ValidationMessage For="@(() => newMediaItem.Description)" class="text-danger" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Form Actions -->
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <a href="/catalog" class="btn btn-outline-secondary">
+                                            <i class="fas fa-times"></i> Cancel
+                                        </a>
+                                        <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                                            @if (isSubmitting)
+                                            {
+                                                <span class="spinner-border spinner-border-sm me-2"></span>
+                                                <text>Adding...</text>
+                                            }
+                                            else
+                                            {
+                                                <i class="fas fa-plus me-2"></i>
+                                                <text>Add Media Item</text>
+                                            }
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private MediaItem newMediaItem = new()
+    {
+        Title = "",
+        Type = MediaType.Book,
+        Quantity = 1
+    };
+
+    private bool isSubmitting = false;
+    private bool showISBNField = true; // Default true for books
+    private string errorMessage = "";
+    private string successMessage = "";
+
+    protected override void OnInitialized()
+    {
+        if (!WebAuth.IsAuthenticated())
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        // Set the created by user
+        var currentUser = WebAuth.GetCurrentUser();
+        if (currentUser != null)
+        {
+            newMediaItem.CreatedByUserId = currentUser.Id;
+            newMediaItem.CreatedAt = DateTime.UtcNow;
+        }
+
+        UpdateISBNFieldVisibility();
+    }
+
+    private async Task HandleAddMediaItem()
+    {
+        isSubmitting = true;
+        errorMessage = "";
+        successMessage = "";
+        StateHasChanged();
+
+        try
+        {
+            // Set additional properties
+            newMediaItem.AvailableQuantity = newMediaItem.Quantity;
+            newMediaItem.CreatedAt = DateTime.UtcNow;
+            
+            var currentUser = WebAuth.GetCurrentUser();
+            if (currentUser != null)
+            {
+                newMediaItem.CreatedByUserId = currentUser.Id;
+            }
+
+            // Validate ISBN for books
+            if (newMediaItem.Type.RequiresISBN() && string.IsNullOrWhiteSpace(newMediaItem.ISBN))
+            {
+                errorMessage = "ISBN is required for books and e-books.";
+                return;
+            }
+
+            // Add the media item
+            await MediaItemService.CreateAsync(newMediaItem, currentUser?.Id ?? 0);
+            
+            successMessage = $"Media item '{newMediaItem.Title}' has been successfully added to the library!";
+            
+            // Reset form
+            newMediaItem = new MediaItem
+            {
+                Title = "",
+                Type = MediaType.Book,
+                Quantity = 1,
+                CreatedByUserId = currentUser?.Id ?? 0,
+                CreatedAt = DateTime.UtcNow
+            };
+            UpdateISBNFieldVisibility();
+
+            // Show success message for a few seconds, then redirect
+            await Task.Delay(2000);
+            Navigation.NavigateTo("/catalog");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error adding media item: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnTypeChanged(ChangeEventArgs e)
+    {
+        if (Enum.TryParse<MediaType>(e.Value?.ToString(), out var mediaType))
+        {
+            newMediaItem.Type = mediaType;
+            UpdateISBNFieldVisibility();
+            StateHasChanged();
+        }
+    }
+
+    private void UpdateISBNFieldVisibility()
+    {
+        showISBNField = newMediaItem.Type.RequiresISBN();
+    }
+
+    private void ClearError()
+    {
+        errorMessage = "";
+        StateHasChanged();
+    }
+
+    private void ClearSuccess()
+    {
+        successMessage = "";
+        StateHasChanged();
+    }
+}

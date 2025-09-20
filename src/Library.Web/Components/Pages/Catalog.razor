@@ -1,0 +1,375 @@
+@page "/catalog"
+@page "/search"
+@using Library.Core.Models
+@using Library.Application.Services
+@using Library.Web.Services
+@using Microsoft.AspNetCore.Components.Forms
+@using System.ComponentModel.DataAnnotations
+@inject SearchService SearchService
+@inject WebAuthenticationService WebAuth
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Catalog Search - Library Management</PageTitle>
+
+@if (!WebAuth.IsAuthenticated())
+{
+    <div class="container mt-5">
+        <div class="alert alert-warning text-center">
+            <h4><i class="fas fa-exclamation-triangle"></i> Access Denied</h4>
+            <p>You need to login to browse the catalog.</p>
+            <a href="/login" class="btn btn-primary">Go to Login</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="container-fluid mt-3">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2><i class="fas fa-search"></i> Catalog Search</h2>
+                        <p class="text-muted mb-0">Search and browse the library collection</p>
+                    </div>
+                    <div>
+                        <a href="/dashboard" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Form -->
+        <div class="row mb-4">
+            <div class="col">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-filter"></i> Search Filters</h5>
+                    </div>
+                    <div class="card-body">
+                        <EditForm Model="searchCriteria" OnValidSubmit="PerformSearch">
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Title</label>
+                                    <InputText class="form-control" @bind-Value="searchCriteria.Title" 
+                                              placeholder="Search by title..." />
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Author</label>
+                                    <InputText class="form-control" @bind-Value="searchCriteria.Author" 
+                                              placeholder="Search by author..." />
+                                </div>
+                                <div class="col-md-2 mb-3">
+                                    <label class="form-label">Genre</label>
+                                    <InputText class="form-control" @bind-Value="searchCriteria.Genre" 
+                                              placeholder="Genre..." />
+                                </div>
+                                <div class="col-md-2 mb-3">
+                                    <label class="form-label">Type</label>
+                                    <InputSelect class="form-select" @bind-Value="searchCriteria.Type">
+                                        <option value="">All Types</option>
+                                        <option value="Book">Book</option>
+                                        <option value="DVD">DVD</option>
+                                        <option value="CD">CD</option>
+                                        <option value="Magazine">Magazine</option>
+                                        <option value="AudioBook">Audio Book</option>
+                                        <option value="EBook">E-Book</option>
+                                        <option value="BluRay">Blu-ray</option>
+                                        <option value="Journal">Journal</option>
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-2 mb-3">
+                                    <label class="form-label">Year</label>
+                                    <InputNumber class="form-control" @bind-Value="searchCriteria.Year" 
+                                                placeholder="Year..." />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Sort By</label>
+                                    <InputSelect class="form-select" @bind-Value="searchCriteria.SortBy">
+                                        <option value="@SortCriteria.Title">Title</option>
+                                        <option value="@SortCriteria.Author">Author</option>
+                                        <option value="@SortCriteria.Year">Year</option>
+                                        <option value="@SortCriteria.Id">Date Added</option>
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Results per page</label>
+                                    <InputSelect class="form-select" @bind-Value="searchCriteria.PageSize">
+                                        <option value="10">10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-6 mb-3 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-primary me-2" disabled="@isSearching">
+                                        @if (isSearching)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2"></span>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-search me-2"></i>
+                                        }
+                                        Search
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" @onclick="ClearSearch">
+                                        <i class="fas fa-times"></i> Clear
+                                    </button>
+                                </div>
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        @if (searchResults != null)
+        {
+            <div class="row">
+                <div class="col">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-list"></i> Search Results 
+                                <span class="badge bg-primary">@totalCount items found</span>
+                            </h5>
+                            @if (searchResults.Any())
+                            {
+                                <small class="text-muted">
+                                    Showing @((searchCriteria.Page * searchCriteria.PageSize) + 1) - 
+                                    @Math.Min((searchCriteria.Page + 1) * searchCriteria.PageSize, totalCount) 
+                                    of @totalCount
+                                </small>
+                            }
+                        </div>
+                        <div class="card-body">
+                            @if (searchResults.Any())
+                            {
+                                <div class="row">
+                                    @foreach (var item in searchResults)
+                                    {
+                                        <div class="col-md-6 col-lg-4 mb-3">
+                                            <div class="card h-100">
+                                                <div class="card-body">
+                                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                                        <h6 class="card-title mb-1">@item.Title</h6>
+                                                        <span class="badge bg-@GetTypeBadgeColor(item.Type.GetDisplayName())">@item.Type.GetDisplayName()</span>
+                                                    </div>
+                                                    
+                                                    @if (!string.IsNullOrEmpty(item.Author))
+                                                    {
+                                                        <p class="card-text mb-1">
+                                                            <i class="fas fa-user"></i> <strong>Author:</strong> @item.Author
+                                                        </p>
+                                                    }
+                                                    
+                                                    @if (!string.IsNullOrEmpty(item.Genre))
+                                                    {
+                                                        <p class="card-text mb-1">
+                                                            <i class="fas fa-tag"></i> <strong>Genre:</strong> @item.Genre
+                                                        </p>
+                                                    }
+                                                    
+                                                    @if (!string.IsNullOrEmpty(item.ISBN))
+                                                    {
+                                                        <p class="card-text mb-1">
+                                                            <i class="fas fa-barcode"></i> <strong>ISBN:</strong> @item.ISBN
+                                                        </p>
+                                                    }
+                                                    
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <small class="text-muted">
+                                                            <i class="fas fa-calendar"></i> 
+                                                            @(item.PublicationDate?.ToString("yyyy") ?? "N/A")
+                                                        </small>
+                                                        <span class="badge bg-@GetAvailabilityBadgeColor(item.AvailableQuantity, item.Quantity)">
+                                                            @item.AvailableQuantity/@item.Quantity available
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div class="card-footer">
+                                                    <div class="btn-group w-100" role="group">
+                                                        <button class="btn btn-sm btn-outline-primary" @onclick="() => ViewDetails(item.Id)">
+                                                            <i class="fas fa-eye"></i> View
+                                                        </button>
+                                                        @if (WebAuth.IsAdmin())
+                                                        {
+                                                            <button class="btn btn-sm btn-outline-warning" @onclick="() => EditItem(item.Id)">
+                                                                <i class="fas fa-edit"></i> Edit
+                                                            </button>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- Pagination -->
+                                @if (totalPages > 1)
+                                {
+                                    <nav aria-label="Search results pagination">
+                                        <ul class="pagination justify-content-center">
+                                            <li class="page-item @(currentPage == 0 ? "disabled" : "")">
+                                                <button class="page-link" @onclick="() => GoToPage(currentPage - 1)" disabled="@(currentPage == 0)">
+                                                    <i class="fas fa-chevron-left"></i> Previous
+                                                </button>
+                                            </li>
+                                            
+                                            @for (int i = Math.Max(0, currentPage - 2); i <= Math.Min(totalPages - 1, currentPage + 2); i++)
+                                            {
+                                                int pageNumber = i;
+                                                <li class="page-item @(pageNumber == currentPage ? "active" : "")">
+                                                    <button class="page-link" @onclick="() => GoToPage(pageNumber)">
+                                                        @(pageNumber + 1)
+                                                    </button>
+                                                </li>
+                                            }
+                                            
+                                            <li class="page-item @(currentPage >= totalPages - 1 ? "disabled" : "")">
+                                                <button class="page-link" @onclick="() => GoToPage(currentPage + 1)" disabled="@(currentPage >= totalPages - 1)">
+                                                    Next <i class="fas fa-chevron-right"></i>
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    </nav>
+                                }
+                            }
+                            else
+                            {
+                                <div class="text-center py-5">
+                                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                                    <h5 class="text-muted">No items found</h5>
+                                    <p class="text-muted">Try adjusting your search criteria</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else if (hasSearched && !isSearching)
+        {
+            <div class="row">
+                <div class="col">
+                    <div class="text-center py-5">
+                        <i class="fas fa-book fa-3x text-primary mb-3"></i>
+                        <h5>Welcome to the Library Catalog</h5>
+                        <p class="text-muted">Use the search form above to find books, DVDs, and other media</p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private SearchCriteria searchCriteria = new();
+    private List<MediaItem>? searchResults;
+    private int totalCount = 0;
+    private int currentPage = 0;
+    private int totalPages = 0;
+    private bool isSearching = false;
+    private bool hasSearched = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!WebAuth.IsAuthenticated())
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        // Initialize with default values
+        searchCriteria.Page = 0;
+        searchCriteria.PageSize = 25;
+        searchCriteria.SortBy = SortCriteria.Title;
+
+        // Perform initial search to show all items
+        await PerformSearch();
+    }
+
+    private async Task PerformSearch()
+    {
+        isSearching = true;
+        hasSearched = true;
+        StateHasChanged();
+
+        try
+        {
+            var result = await SearchService.SearchAsync(searchCriteria);
+            searchResults = result.Items.ToList();
+            totalCount = result.TotalCount;
+            currentPage = searchCriteria.Page;
+            totalPages = (int)Math.Ceiling((double)totalCount / searchCriteria.PageSize);
+        }
+        catch (Exception)
+        {
+            // Log error and show empty results
+            searchResults = new List<MediaItem>();
+            totalCount = 0;
+            totalPages = 0;
+        }
+        finally
+        {
+            isSearching = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task GoToPage(int pageNumber)
+    {
+        if (pageNumber >= 0 && pageNumber < totalPages)
+        {
+            searchCriteria.Page = pageNumber;
+            await PerformSearch();
+        }
+    }
+
+    private void ClearSearch()
+    {
+        searchCriteria = new SearchCriteria
+        {
+            Page = 0,
+            PageSize = 25,
+            SortBy = SortCriteria.Title
+        };
+        searchResults = null;
+        totalCount = 0;
+        hasSearched = false;
+        StateHasChanged();
+    }
+
+    private void ViewDetails(int itemId)
+    {
+        Navigation.NavigateTo($"/media/{itemId}");
+    }
+
+    private void EditItem(int itemId)
+    {
+        Navigation.NavigateTo($"/media/{itemId}/edit");
+    }
+
+    private string GetTypeBadgeColor(string? type) => type switch
+    {
+        "Book" => "success",
+        "DVD" => "primary",
+        "CD" => "info",
+        "Magazine" => "warning",
+        _ => "secondary"
+    };
+
+    private string GetAvailabilityBadgeColor(int available, int total)
+    {
+        if (available == 0) return "danger";
+        if (available < total * 0.3) return "warning";
+        return "success";
+    }
+}

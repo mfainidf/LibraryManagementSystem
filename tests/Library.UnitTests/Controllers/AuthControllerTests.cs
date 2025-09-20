@@ -1,0 +1,261 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Library.API.Controllers;
+using Library.API.Models;
+using Library.Core.Interfaces;
+using Library.Core.Models;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Moq;
+using Xunit;
+
+namespace Library.UnitTests.Controllers;
+
+public class AuthControllerTests
+{
+    private readonly Mock<IAuthenticationService> _mockAuthService;
+    private readonly Mock<IConfiguration> _mockConfiguration;
+    private readonly Mock<IConfigurationSection> _mockConfigSection;
+    private readonly AuthController _controller;
+
+    private static void AssertTokenClaims(string token, User user)
+    {
+        var jwtToken = new JwtSecurityTokenHandler().ReadJwtToken(token);
+        
+        // Print out all claims for debugging
+        foreach (var claim in jwtToken.Claims)
+        {
+            System.Diagnostics.Debug.WriteLine($"Claim: {claim.Type} = {claim.Value}");
+        }
+        
+        // Assert each claim
+        Assert.Equal(user.Id.ToString(), jwtToken.Claims.First(c => c.Type == "nameid" || c.Type == ClaimTypes.NameIdentifier).Value);
+        Assert.Equal(user.Name, jwtToken.Claims.First(c => c.Type == "unique_name" || c.Type == ClaimTypes.Name).Value);
+        Assert.Equal(user.Email, jwtToken.Claims.First(c => c.Type == "email" || c.Type == ClaimTypes.Email).Value);
+        Assert.Equal(user.Role.ToString(), jwtToken.Claims.First(c => c.Type == "role" || c.Type == ClaimTypes.Role).Value);
+    }
+
+    public AuthControllerTests()
+    {
+        _mockAuthService = new Mock<IAuthenticationService>();
+        _mockConfiguration = new Mock<IConfiguration>();
+        _mockConfigSection = new Mock<IConfigurationSection>();
+
+        // Setup JWT configuration
+        _mockConfigSection.Setup(x => x["SecretKey"]).Returns("your-256-bit-secret-your-256-bit-secret");
+        _mockConfigSection.Setup(x => x["Issuer"]).Returns("test-issuer");
+        _mockConfigSection.Setup(x => x["Audience"]).Returns("test-audience");
+        _mockConfigSection.Setup(x => x["ExpirationHours"]).Returns("24");
+
+        _mockConfiguration.Setup(x => x.GetSection("JwtSettings")).Returns(_mockConfigSection.Object);
+
+        _controller = new AuthController(_mockAuthService.Object, _mockConfiguration.Object);
+    }
+
+    [Fact]
+    public async Task Login_WithValidCredentials_ReturnsOkWithToken()
+    {
+        // Arrange
+        var request = new LoginRequest { Email = "test@example.com", Password = "Test123!" };
+        var user = new User 
+        { 
+            Id = 1, 
+            Name = "Test User",
+            Email = request.Email, 
+            PasswordHash = "hashedpassword", 
+            Role = UserRole.User 
+        };
+        
+        _mockAuthService.Setup(x => x.LoginAsync(request.Email, request.Password))
+            .ReturnsAsync(user);
+
+        // Act
+        var result = await _controller.Login(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<TokenResponse>(okResult.Value);
+        Assert.NotNull(response.Token);
+
+        AssertTokenClaims(response.Token, user);
+    }
+
+    [Fact]
+    public async Task Login_WithInvalidCredentials_ReturnsUnauthorized()
+    {
+        // Arrange
+        var request = new LoginRequest { Email = "test@example.com", Password = "WrongPass123!" };
+        
+        _mockAuthService.Setup(x => x.LoginAsync(request.Email, request.Password))
+            .ThrowsAsync(new InvalidOperationException("Invalid credentials"));
+
+        // Act
+        var result = await _controller.Login(request);
+
+        // Assert
+        var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(result);
+        var response = Assert.IsType<MessageResponse>(unauthorizedResult.Value);
+        Assert.Equal("Invalid credentials", response.Message);
+    }
+
+    [Fact]
+    public async Task Register_WithValidData_ReturnsOkWithToken()
+    {
+        // Arrange
+        var request = new RegisterRequest 
+        { 
+            Name = "Test User",
+            Email = "test@example.com", 
+            Password = "Test123!" 
+        };
+        var user = new User 
+        { 
+            Id = 1, 
+            Name = request.Name,
+            Email = request.Email, 
+            PasswordHash = "hashedpassword",
+            Role = UserRole.User 
+        };
+        
+        _mockAuthService.Setup(x => x.RegisterUserAsync(request.Name, request.Email, request.Password))
+            .ReturnsAsync(user);
+
+        // Act
+        var result = await _controller.Register(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<TokenResponse>(okResult.Value);
+        Assert.NotNull(response.Token);
+
+        AssertTokenClaims(response.Token, user);
+    }
+
+    [Fact]
+    public async Task Register_WithDuplicateEmail_ReturnsBadRequest()
+    {
+        // Arrange
+        var request = new RegisterRequest 
+        { 
+            Name = "Test User",
+            Email = "existing@example.com", 
+            Password = "Test123!" 
+        };
+        
+        _mockAuthService.Setup(x => x.RegisterUserAsync(request.Name, request.Email, request.Password))
+            .ThrowsAsync(new InvalidOperationException("Email already exists"));
+
+        // Act
+        var result = await _controller.Register(request);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+        var response = Assert.IsType<MessageResponse>(badRequestResult.Value);
+        Assert.Equal("Email already exists", response.Message);
+    }
+
+    [Fact]
+    public async Task RegisterAdmin_WithAdminRole_ReturnsOkWithToken()
+    {
+        // Arrange
+        var request = new RegisterRequest 
+        { 
+            Name = "Admin User",
+            Email = "admin@example.com", 
+            Password = "Admin123!" 
+        };
+        var user = new User 
+        { 
+            Id = 1, 
+            Name = request.Name,
+            Email = request.Email, 
+            PasswordHash = "hashedpassword",
+            Role = UserRole.Administrator 
+        };
+        
+        _mockAuthService.Setup(x => x.RegisterAdminAsync(request.Name, request.Email, request.Password))
+            .ReturnsAsync(user);
+
+        // Set up HttpContext with admin claims
+        var claims = new[] { new Claim(ClaimTypes.Role, "Administrator") };
+        var identity = new ClaimsIdentity(claims, "Test");
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = claimsPrincipal }
+        };
+
+        // Act
+        var result = await _controller.RegisterAdmin(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<TokenResponse>(okResult.Value);
+        Assert.NotNull(response.Token);
+
+        AssertTokenClaims(response.Token, user);
+    }
+
+    [Fact]
+    public async Task ChangePassword_WithValidData_ReturnsOk()
+    {
+        // Arrange
+        var request = new ChangePasswordRequest 
+        { 
+            CurrentPassword = "OldPass123!",
+            NewPassword = "NewPass123!" 
+        };
+        var userId = 1;
+
+        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, userId.ToString()) };
+        var identity = new ClaimsIdentity(claims, "Test");
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = claimsPrincipal }
+        };
+
+        _mockAuthService.Setup(x => x.ChangePasswordAsync(userId, request.CurrentPassword, request.NewPassword))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _controller.ChangePassword(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<MessageResponse>(okResult.Value);
+        Assert.Equal("Password changed successfully", response.Message);
+    }
+
+    [Fact]
+    public async Task ChangePassword_WithInvalidCurrentPassword_ReturnsBadRequest()
+    {
+        // Arrange
+        var request = new ChangePasswordRequest 
+        { 
+            CurrentPassword = "WrongPass123!",
+            NewPassword = "NewPass123!" 
+        };
+        var userId = 1;
+
+        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, userId.ToString()) };
+        var identity = new ClaimsIdentity(claims, "Test");
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = claimsPrincipal }
+        };
+
+        _mockAuthService.Setup(x => x.ChangePasswordAsync(userId, request.CurrentPassword, request.NewPassword))
+            .ThrowsAsync(new InvalidOperationException("Current password is incorrect"));
+
+        // Act
+        var result = await _controller.ChangePassword(request);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+        var response = Assert.IsType<MessageResponse>(badRequestResult.Value);
+        Assert.Equal("Current password is incorrect", response.Message);
+    }
+}
